@@ -84,7 +84,7 @@ class GroverConfig(object):
     @classmethod
     def from_json_file(cls, json_file):
         """Constructs a `NewsConfig` from a json file of parameters."""
-        with tf.gfile.GFile(json_file, "r") as reader:
+        with tf.compat.v1.gfile.GFile(json_file, "r") as reader:
             text = reader.read()
         return cls.from_dict(json.loads(text))
 
@@ -114,7 +114,7 @@ def mask_attention_for_ltr(attention_scores, attention_mask):
 
 def create_initializer(initializer_range=0.02):
     """Creates a `truncated_normal_initializer` with the given range."""
-    return tf.truncated_normal_initializer(stddev=initializer_range)
+    return tf.compat.v1.truncated_normal_initializer(stddev=initializer_range)
 
 
 def _attention_projection_and_transpose(x_flat, batch_size, seq_length, num_attention_heads, size_per_head,
@@ -293,13 +293,13 @@ def embed(input_ids,
     """
     (batch_size, seq_length) = get_shape_list(input_ids, expected_rank=2)
 
-    embedding_table = tf.get_variable(
+    embedding_table = tf.compat.v1.get_variable(
         name='word_embed',
         shape=[vocab_size, embedding_size],
         initializer=create_initializer(initializer_range),
     )
 
-    assert_op = tf.assert_less_equal(tf.reduce_max(input_ids), vocab_size - 1)
+    assert_op = tf.compat.v1.assert_less_equal(tf.reduce_max(input_ids), vocab_size - 1)
     with tf.control_dependencies([assert_op]):
         if use_one_hot_embeddings:
             flat_input_ids = tf.reshape(input_ids, [-1])
@@ -487,8 +487,8 @@ class GroverModel(object):
             assert features_ == (config.hidden_size // config.num_attention_heads)
             caches = tf.unstack(cache, axis=1)
 
-        with tf.variable_scope(scope, default_name='newslm', reuse=reuse):
-            with tf.variable_scope("embeddings"):
+        with tf.compat.v1.variable_scope(scope, default_name='newslm', reuse=reuse):
+            with tf.compat.v1.variable_scope("embeddings"):
                 embeddings, self.embedding_table = embed(self.input_ids, config.vocab_size,
                                                          config.hidden_size,
                                                          position_offset=self.cache_length,
@@ -722,7 +722,7 @@ def sample_step(tokens, ignore_ids, news_config, batch_size=1, p_for_topp=0.95, 
         config=news_config,
         is_training=False,
         input_ids=tokens,
-        reuse=tf.AUTO_REUSE,
+        reuse=tf.compat.v1.AUTO_REUSE,
         scope='newslm',
         chop_off_last_token=False,
         do_cache=True,
